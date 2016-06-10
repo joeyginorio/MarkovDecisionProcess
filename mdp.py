@@ -173,21 +173,6 @@ class MDP(object):
 				if sum_nextState > max_a:
 					max_a = sum_nextState
 					self.policy[i] = j	
-		# NOTES:
-		# Convert policy as a distribution over actions
-		# fix arg_max issue (could be multiple with same value)
-
-		# To-Do
-		# fix to a probabalistic policy (currently is deterministic)
-		# 	- non softmax first (the 3dimensional case)
-		#	- softmax later maybe
-		# 	function that transforms 2d grid state to value iteration compatible state
-
-	def softmax(self, v):
-		""" 
-			Computes the softmax(v), returning a probability distribution contingent
-			on the discrete values in v.
-		"""
 
 
 	def simulate(self, state):
@@ -228,8 +213,6 @@ class MDP(object):
 				return state
 
 
-		
-			
 
 class BettingGame(MDP):
 
@@ -351,13 +334,4 @@ class BettingGame(MDP):
 			return 0 
 
 		return 0
-
-
-def main():
-	game = BettingGame()
-	game.setBettingGame(40, .6)
-	game.valueIteration()
-	game.extractPolicy()
-	game.simulate()
-
-	return game 
+ 
