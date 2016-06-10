@@ -142,6 +142,7 @@ class MDP(object):
 
 				state_policy[j] = sum_nextState
 			
+			# Softmax the policy			
 			state_policy -= np.max(state_policy)
 			state_policy = np.exp(state_policy / float(tau))
 			state_policy /= state_policy.sum()
