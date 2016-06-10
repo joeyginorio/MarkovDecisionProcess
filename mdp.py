@@ -119,7 +119,7 @@ class MDP(object):
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
 			
-	def extractPolicy(self):
+	def extractPolicy(self, tau=100):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
@@ -140,13 +140,11 @@ class MDP(object):
 					sum_nextState += self.getTransitionStatesAndProbs(i,j)[k] * \
 					(self.getReward(i) + self.discount*self.values[k])
 
-				a_vals.append(sum_nextState)
-
-			max_a = np.max(a_vals)
-
-			for j in range(len(self.a)):
-				if max_a == a_vals[j]:
-					state_policy[j] = 1
+				state_policy[j] = sum_nextState
+			
+			state_policy -= np.max(state_policy)
+			state_policy = np.exp(state_policy / float(tau))
+			state_policy /= state_policy.sum()
 
 			self.policy[i] = state_policy
 
