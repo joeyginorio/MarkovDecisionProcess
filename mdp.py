@@ -119,7 +119,7 @@ class MDP(object):
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
 			
-	def extractPolicy(self, tau=100):
+	def extractPolicy(self, tau=1000):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
