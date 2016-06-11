@@ -75,7 +75,63 @@ class MDP(object):
 		"""
 		return np.random.choice(self.s, p=self.getTransitionStatesAndProbs(state, action))	
 
-	def valueIteration(self, epsilon=.01):
+
+	def valueIteration(self, epsilon = 1.0):
+		"""
+			Performs value iteration to populate the values of all states in
+			the MDP. 
+
+			Params:
+				- epsilon: Determines limit of convergence
+		"""
+
+		# Initialize V_0 to zero
+		self.values = np.zeros(len(self.s))
+
+		# Loop until convergence
+		while True:
+
+			# To be used for convergence check
+			oldValues = np.copy(self.values)
+
+			for i in range(len(self.s)):
+
+				self.values[i] = self.r[i] + np.max(self.discount* \
+							np.dot(self.t[i][:][:], self.values))
+
+			# print np.max(np.abs(self.values - oldValues))
+			# print game.values
+
+			# Check Convergence
+			if np.max(np.abs(self.values - oldValues)) <= epsilon:
+				break
+
+	def extractPolicy(self, tau=.01):
+		"""
+			Extract policy from values after value iteration runs.
+		"""
+
+		# this is messed up
+		
+		self.policy = np.zeros([len(self.s),len(self.a)])
+
+		for i in range(len(self.s)):
+
+			state_policy = np.zeros(len(self.a))
+
+			state_policy[i] = self.r[i] + np.max(self.discount* \
+						np.dot(self.t[i][:][:], self.values))
+
+			# Softmax the policy			
+			state_policy -= np.max(state_policy)
+			state_policy = np.exp(state_policy / float(tau))
+			state_policy /= state_policy.sum()
+
+			self.policy[i] = state_policy
+
+
+
+	def oldValueIteration(self, epsilon=.001):
 		"""
 			Performs value iteration to populate the values of all states in
 			the MDP. 
@@ -118,8 +174,10 @@ class MDP(object):
 			# Convergence Check
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
-			
-	def extractPolicy(self, tau=1000):
+			 
+
+
+	def oldExtractPolicy(self, tau=.01):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
@@ -237,13 +295,14 @@ class BettingGame(MDP):
 
 	"""
 
-	def __init__(self, startCash=50, pHeads=.5):
+	def __init__(self, pHeads=.5):
 
 		MDP.__init__(self)
-		self.cash = startCash
-		self.currentState = startCash
 		self.pHeads = pHeads
-		self.setBettingGame(startCash, pHeads)
+		self.setBettingGame(pHeads)
+		self.valueIteration()
+		self.values -= np.mean(self.values)
+		self.extractPolicy()
 
 	def getStartState(self):
 		"""
@@ -257,7 +316,7 @@ class BettingGame(MDP):
 		"""
 		return True if state is 100 or state is 0 else False
 
-	def setBettingGame(self, startCash=50, pHeads=.5):
+	def setBettingGame(self, pHeads=.5):
 
 		""" 
 			Initializes the MDP to the starting conditions for 
@@ -271,7 +330,6 @@ class BettingGame(MDP):
 		"""
 
 		# This is how much we're starting with
-		self.cash = startCash
 		self.pHeads = pHeads
 
 
