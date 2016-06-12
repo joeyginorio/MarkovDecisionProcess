@@ -33,7 +33,7 @@ class MDP(object):
 		self.r = np.array(rewards)
 		self.t = np.array(transitions)
 		
-		self.discount = .8
+		self.discount = .999
 
 		# Value iteration will update this
 		self.values = None
@@ -75,7 +75,8 @@ class MDP(object):
 		"""
 		return np.random.choice(self.s, p=self.getTransitionStatesAndProbs(state, action))	
 
-	def valueIteration(self, epsilon=.01):
+
+	def valueIteration(self, epsilon = .01):
 		"""
 			Performs value iteration to populate the values of all states in
 			the MDP. 
@@ -93,103 +94,35 @@ class MDP(object):
 			# To be used for convergence check
 			oldValues = np.copy(self.values)
 
-			for i, state in enumerate(self.s):
+			for i in range(len(self.s)):
 
-				# Take max over all possible actions in state
-				max_a = 0
+				self.values[i] = self.r[i] + np.max(self.discount* \
+							np.dot(self.t[i][:][:], self.values))
 
-				for j, action in enumerate(self.a):
-
-					# Account for all possible states a particular action can take you to
-					sum_nextState = 0
-					for k, nextState in enumerate(self.s):
-						sum_nextState += self.getTransitionStatesAndProbs(i,j)[k] * \
-						(self.getReward(i) + self.discount*self.values[k])
-
-					if sum_nextState > max_a:
-						max_a = sum_nextState
-						
-
-				self.values[i] = max_a
-
-	
-			print np.max(np.abs(self.values - oldValues))
-			
-			# Convergence Check
+			# Check Convergence
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
-			
-	def extractPolicy(self):
+
+	def extractPolicy(self, tau=.01):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
+
 		self.policy = np.zeros([len(self.s),len(self.a)])
 
 		for i in range(len(self.s)):
 
-			# Take max over all possible actions in state
-			max_a = 0
-			a_vals = list()
 			state_policy = np.zeros(len(self.a))
 
-			for j in range(len(self.a)):
+			state_policy = self.r[i] + self.discount* \
+						np.dot(self.t[i][:][:], self.values)
 
-				# Account for all possible states a particular action can take you to
-				sum_nextState = 0
-				for k in range(len(self.s)):
-					sum_nextState += self.getTransitionStatesAndProbs(i,j)[k] * \
-					(self.getReward(i) + self.discount*self.values[k])
-
-				a_vals.append(sum_nextState)
-
-			max_a = np.max(a_vals)
-
-			for j in range(len(self.a)):
-				if max_a == a_vals[j]:
-					state_policy[j] = 1
+			# Softmax the policy			
+			state_policy -= np.max(state_policy)
+			state_policy = np.exp(state_policy / float(tau))
+			state_policy /= state_policy.sum()
 
 			self.policy[i] = state_policy
-
-			del a_vals[:]
-				
-
-	def extractDeterministicPolicy(self):
-		"""
-			Extract policy from values after value iteration runs.
-		"""
-		self.policy = np.zeros(len(self.s))
-
-		for i in range(len(self.s)):
-
-			# Take max over all possible actions in state
-			max_a = 0
-
-			for j in range(len(self.s)):
-
-				# Account for all possible states a particular action can take you to
-				sum_nextState = 0
-				for k in range(len(self.s)):
-					sum_nextState += self.getTransitionStatesAndProbs(i,j)[k] * \
-					(self.getReward(i) + self.discount*self.values[k])
-
-				if sum_nextState > max_a:
-					max_a = sum_nextState
-					self.policy[i] = j	
-		# NOTES:
-		# Convert policy as a distribution over actions
-		# fix arg_max issue (could be multiple with same value)
-
-		# To-Do
-		# fix to a probabalistic policy (currently is deterministic)
-		# 	- non softmax first (the 3dimensional case)
-		#	- softmax later maybe
-		# 	function that transforms 2d grid state to value iteration compatible state
-
-	def softmax(self, v):
-		""" 
-			Computes the softmax(v), returning a probability distribution contingent
-			on the discrete values in v.
-		"""
 
 
 	def simulate(self, state):
@@ -230,8 +163,6 @@ class MDP(object):
 				return state
 
 
-		
-			
 
 class BettingGame(MDP):
 
@@ -255,13 +186,13 @@ class BettingGame(MDP):
 
 	"""
 
-	def __init__(self, startCash=50, pHeads=.5):
+	def __init__(self, pHeads=.5):
 
 		MDP.__init__(self)
-		self.cash = startCash
-		self.currentState = startCash
 		self.pHeads = pHeads
-		self.setBettingGame(startCash, pHeads)
+		self.setBettingGame(pHeads)
+		self.valueIteration()
+		self.extractPolicy()
 
 	def getStartState(self):
 		"""
@@ -275,7 +206,7 @@ class BettingGame(MDP):
 		"""
 		return True if state is 100 or state is 0 else False
 
-	def setBettingGame(self, startCash=50, pHeads=.5):
+	def setBettingGame(self, pHeads=.5):
 
 		""" 
 			Initializes the MDP to the starting conditions for 
@@ -289,7 +220,6 @@ class BettingGame(MDP):
 		"""
 
 		# This is how much we're starting with
-		self.cash = startCash
 		self.pHeads = pHeads
 
 
@@ -302,7 +232,6 @@ class BettingGame(MDP):
 
 		# Initialize rewards
 		self.r = np.zeros(101)
-		self.r[0] = -100
 		self.r[100] = 100
 
 		# Initialize transition matrix
@@ -353,13 +282,4 @@ class BettingGame(MDP):
 			return 0 
 
 		return 0
-
-
-def main():
-	game = BettingGame()
-	game.setBettingGame(40, .6)
-	game.valueIteration()
-	game.extractPolicy()
-	game.simulate()
-
-	return game 
+ 
