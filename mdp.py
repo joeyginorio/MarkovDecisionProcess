@@ -4,12 +4,12 @@
 # - Includes BettingGame example
 
 
+import matplotlib.pyplot as plt
 import numpy as np
 import random
+import pyprind
 from abc import ABCMeta
 from abc import abstractmethod
-
-import pdb # for debugging, remove later
 
 class MDP(object):
 	""" 
@@ -33,7 +33,7 @@ class MDP(object):
 		self.r = np.array(rewards)
 		self.t = np.array(transitions)
 		
-		self.discount = .999
+		self.discount = .95
 
 		# Value iteration will update this
 		self.values = None
@@ -76,7 +76,7 @@ class MDP(object):
 		return np.random.choice(self.s, p=self.getTransitionStatesAndProbs(state, action))	
 
 
-	def valueIteration(self, epsilon = .01):
+	def valueIteration(self, epsilon = .1):
 		"""
 			Performs value iteration to populate the values of all states in
 			the MDP. 
@@ -103,7 +103,7 @@ class MDP(object):
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
 
-	def extractPolicy(self, tau=.01):
+	def extractPolicy(self, tau=10):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
@@ -164,6 +164,8 @@ class MDP(object):
 
 
 
+
+
 class BettingGame(MDP):
 
 	""" 
@@ -186,7 +188,7 @@ class BettingGame(MDP):
 
 	"""
 
-	def __init__(self, pHeads=.5):
+	def __init__(self, pHeads=.5, epsilon=.01, tau=10):
 
 		MDP.__init__(self)
 		self.pHeads = pHeads
@@ -283,3 +285,46 @@ class BettingGame(MDP):
 
 		return 0
  
+class InferenceMachine():
+	"""
+		Conducts inference via MDPs for the BettingGame.
+	"""
+	def __init__(self):
+		self.sims = list()
+
+	def buildBiasEngine(self):
+		""" 
+			Simulates MDPs with varying bias to build a bias inference engine.
+		"""
+
+		print "Loading MDPs...\n"
+
+		# Unnecessary progress bar for terminal
+		bar = pyprind.ProgBar(len(np.arange(0,1.01,.01)))
+		for i in np.arange(0,1.01,.01):
+			self.sims.append(BettingGame(i))
+			bar.update()
+
+		print "\nDone loading MDPs..."
+
+
+	def inferBias(self, state, action):
+		"""
+			Uses inference engine to inferBias predicated on an agents'
+			actions and current state.
+		"""
+
+		biasDistribution = list()
+		for i in range(len(self.sims)):
+			biasDistribution.append(self.sims[i].policy[state][action])
+
+		plt.plot(biasDistribution)
+		# Make graph pretty!
+		plt.ylabel('P(Action|State)')
+		plt.xlabel('Bias')
+		plt.title('Likelihood Function for Actions')
+		plt.show()
+
+
+infer = InferenceMachine()
+infer.buildBiasEngine()
