@@ -103,7 +103,7 @@ class MDP(object):
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
 
-	def extractPolicy(self, tau=10):
+	def extractPolicy(self, tau=.01):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
@@ -224,8 +224,6 @@ class BettingGame(MDP):
 		# This is how much we're starting with
 		self.pHeads = pHeads
 
-
-
 		# Initialize all possible states
 		self.s = np.arange(101)
 
@@ -234,6 +232,7 @@ class BettingGame(MDP):
 
 		# Initialize rewards
 		self.r = np.zeros(101)
+		# self.r[0] = -10
 		self.r[100] = 100
 
 		# Initialize transition matrix
@@ -242,6 +241,12 @@ class BettingGame(MDP):
 		# List comprehension using tHelper to determine probabilities for each index
 		self.t = [self.tHelper(i[0], i[1], i[2], self.pHeads) for i,x in np.ndenumerate(temp)]
 		self.t = np.reshape(self.t, np.shape(temp))
+		
+		# for x in range(len(self.s)):
+		# 	self.t[100][x] = np.zeros(len(self.s))
+		# 	self.t[100][x][100] = 1.0
+
+
 
 	def tHelper(self, x, y, z , pHeads):
 
@@ -320,7 +325,7 @@ class InferenceMachine():
 
 		plt.plot(biasDistribution)
 		# Make graph pretty!
-		plt.ylabel('P(Action|State)')
+		plt.ylabel('P(Action={}|State={})'.format(action,state))
 		plt.xlabel('Bias')
 		plt.title('Likelihood Function for Actions')
 		plt.show()
@@ -328,3 +333,20 @@ class InferenceMachine():
 
 infer = InferenceMachine()
 infer.buildBiasEngine()
+
+
+""" Notes:
+	Change t matrix for state 100, to stay at 100
+
+	ToM appeals to value more than policy?
+	Encoding rewards, values in the brain (look up papers)
+
+	RTBJ at work during ToM
+
+	********First Chapter of Vision:
+		Computational, algorithmic, implementation
+
+	AlarmClock
+	Candle
+
+"""
