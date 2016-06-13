@@ -232,7 +232,7 @@ class BettingGame(MDP):
 
 		# Initialize rewards
 		self.r = np.zeros(101)
-		# self.r[0] = -10
+		self.r[0] = -10
 		self.r[100] = 100
 
 		# Initialize transition matrix
@@ -242,9 +242,9 @@ class BettingGame(MDP):
 		self.t = [self.tHelper(i[0], i[1], i[2], self.pHeads) for i,x in np.ndenumerate(temp)]
 		self.t = np.reshape(self.t, np.shape(temp))
 		
-		# for x in range(len(self.s)):
-		# 	self.t[100][x] = np.zeros(len(self.s))
-		# 	self.t[100][x][100] = 1.0
+		for x in range(len(self.s)):
+			self.t[100][x] = np.zeros(len(self.s))
+			self.t[100][x][100] = 1.0
 
 
 
