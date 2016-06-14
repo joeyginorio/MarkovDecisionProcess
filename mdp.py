@@ -103,7 +103,7 @@ class MDP(object):
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
 
-	def extractPolicy(self, tau=.01):
+	def extractPolicy(self, tau=1):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
@@ -188,7 +188,7 @@ class BettingGame(MDP):
 
 	"""
 
-	def __init__(self, pHeads=.5, epsilon=.01, tau=10):
+	def __init__(self, pHeads=.5, epsilon=.01, tau=1):
 
 		MDP.__init__(self)
 		self.pHeads = pHeads
@@ -232,7 +232,7 @@ class BettingGame(MDP):
 
 		# Initialize rewards
 		self.r = np.zeros(102)
-		self.r[0] = -10
+		self.r[0] = 0
 		self.r[100] = 100
 
 		# Initialize transition matrix
@@ -336,8 +336,8 @@ class InferenceMachine():
 		plt.show()
 
 
-infer = InferenceMachine()
-infer.buildBiasEngine()
+# infer = InferenceMachine()
+# infer.buildBiasEngine()
 
 
 """ Notes:
@@ -353,5 +353,12 @@ infer.buildBiasEngine()
 
 	AlarmClock
 	Candle
+
+	goodman, learning from bias agents AAAIj
+
+	#
+	Beta bernoulli model (canonical statistical hierarchical model)
+
+
 
 """
