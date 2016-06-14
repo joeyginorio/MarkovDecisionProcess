@@ -94,7 +94,7 @@ class MDP(object):
 			# To be used for convergence check
 			oldValues = np.copy(self.values)
 
-			for i in range(len(self.s)):
+			for i in range(len(self.s)-1):
 
 				self.values[i] = self.r[i] + np.max(self.discount* \
 							np.dot(self.t[i][:][:], self.values))
@@ -103,14 +103,14 @@ class MDP(object):
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
 
-	def extractPolicy(self, tau=.01):
+	def extractPolicy(self, tau=1):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
 
 		self.policy = np.zeros([len(self.s),len(self.a)])
 
-		for i in range(len(self.s)):
+		for i in range(len(self.s)-1):
 
 			state_policy = np.zeros(len(self.a))
 
@@ -188,7 +188,7 @@ class BettingGame(MDP):
 
 	"""
 
-	def __init__(self, pHeads=.5, epsilon=.01, tau=10):
+	def __init__(self, pHeads=.5, epsilon=.01, tau=1):
 
 		MDP.__init__(self)
 		self.pHeads = pHeads
@@ -206,7 +206,7 @@ class BettingGame(MDP):
 		"""
 			Checks if MDP is in terminal state.
 		"""
-		return True if state is 100 or state is 0 else False
+		return True if state is 101 else False
 
 	def setBettingGame(self, pHeads=.5):
 
@@ -225,14 +225,19 @@ class BettingGame(MDP):
 		self.pHeads = pHeads
 
 		# Initialize all possible states
-		self.s = np.arange(101)
+		self.s = np.arange(102)
 
 		# Initialize possible actions
 		self.a = np.arange(101)
 
 		# Initialize rewards
+<<<<<<< HEAD
 		self.r = np.zeros(101)
 		self.r[0] = -10
+=======
+		self.r = np.zeros(102)
+		self.r[0] = 0
+>>>>>>> deathState
 		self.r[100] = 100
 
 		# Initialize transition matrix
@@ -242,9 +247,19 @@ class BettingGame(MDP):
 		self.t = [self.tHelper(i[0], i[1], i[2], self.pHeads) for i,x in np.ndenumerate(temp)]
 		self.t = np.reshape(self.t, np.shape(temp))
 		
+<<<<<<< HEAD
 		for x in range(len(self.s)):
 			self.t[100][x] = np.zeros(len(self.s))
 			self.t[100][x][100] = 1.0
+=======
+		for x in range(len(self.a)):
+
+			# Send the end game states to the death state!
+			self.t[100][x] = np.zeros(len(self.s))
+			self.t[100][x][101] = 1.0
+			self.t[0][x] = np.zeros(len(self.s))
+			self.t[0][x][101] = 1.0
+>>>>>>> deathState
 
 
 
@@ -263,7 +278,7 @@ class BettingGame(MDP):
 	 
 		# If you bet no money, you will always have original amount
 		if x + y is z and y is 0:
-			return 1
+			return 1.0
 
 		# If you bet more money than you have, no chance of any outcome
 		elif y > x and x is not z:
@@ -271,11 +286,11 @@ class BettingGame(MDP):
 
 		# If you bet more money than you have, returns same state with 1.0 prob.
 		elif y > x and x is z:
-			return 1
+			return 1.0
 
 		# Chance you lose
 		elif x - y is z:
-			return 1 - pHeads
+			return 1.0 - pHeads
 
 		# Chance you win
 		elif x + y is z:
@@ -284,6 +299,7 @@ class BettingGame(MDP):
 		# Edge Case: Chance you win, and winnings go over 100
 		elif x + y > z and z is 100:
 			return pHeads
+
 
 		else:
 			return 0 
@@ -331,8 +347,8 @@ class InferenceMachine():
 		plt.show()
 
 
-infer = InferenceMachine()
-infer.buildBiasEngine()
+# infer = InferenceMachine()
+# infer.buildBiasEngine()
 
 
 """ Notes:
@@ -348,5 +364,12 @@ infer.buildBiasEngine()
 
 	AlarmClock
 	Candle
+
+	goodman, learning from bias agents AAAIj
+
+	#
+	Beta bernoulli model (canonical statistical hierarchical model)
+
+
 
 """
