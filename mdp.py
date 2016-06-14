@@ -8,6 +8,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import random
 import pyprind
+from scipy.stats import beta
 from abc import ABCMeta
 from abc import abstractmethod
 
@@ -103,7 +104,7 @@ class MDP(object):
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
 
-	def extractPolicy(self, tau=1):
+	def extractPolicy(self, tau=.1):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
@@ -293,12 +294,29 @@ class BettingGame(MDP):
 
 		return 0
  
+
 class InferenceMachine():
 	"""
 		Conducts inference via MDPs for the BettingGame.
 	"""
 	def __init__(self):
 		self.sims = list()
+
+		self.likelihood = None
+		self.posterior = None
+		self.prior = None
+
+		self.e = None
+
+		self.buildBiasEngine()
+
+
+	def inferSummary(self, state, action):
+		self.inferLikelihood(state, action)
+		self.inferPosterior(state, action)
+		print "Expected Value of Posterior Distribution: {}".format(
+			self.expectedPosterior())
+		self.plotDistributions()
 
 	def buildBiasEngine(self):
 		""" 
@@ -316,29 +334,83 @@ class InferenceMachine():
 		print "\nDone loading MDPs..."
 
 
-	def inferBias(self, state, action):
+	def inferLikelihood(self, state, action):
 		"""
 			Uses inference engine to inferBias predicated on an agents'
 			actions and current state.
 		"""
 
-		biasDistribution = list()
-		for i in range(len(self.sims)):
-			biasDistribution.append(self.sims[i].policy[state][action])
+		self.state = state
+		self.action = action
 
-		plt.plot(biasDistribution)
-		# Make graph pretty!
-		plt.ylabel('P(Action={}|State={})'.format(action,state))
+		self.likelihood = list()
+		for i in range(len(self.sims)):
+			self.likelihood.append(self.sims[i].policy[state][action])
+
+
+	def inferPosterior(self, state, action):
+		"""
+			Uses inference engine to compute posterior probability from the 
+			likelihood and prior (beta distribution).
+		"""
+		self.prior = np.linspace(.01,1.0,101)
+		self.prior = beta.pdf(self.prior,1.9,1.9)
+		self.prior /= self.prior.sum()
+
+		self.posterior = self.likelihood * self.prior
+		self.posterior /= self.posterior.sum()
+
+
+	def plotDistributions(self):
+
+		# Plotting Posterior
+		plt.figure(1)
+		plt.subplot(221)
+		plt.plot(np.linspace(.01,1.0,101), self.posterior)
+		plt.ylabel('P(Action={}|State={})'.format(self.action, self.state))
 		plt.xlabel('Bias')
-		plt.title('Likelihood Function for Actions')
+		plt.title('Posterior Probability for Bias')
+
+		# Plotting Likelihood
+		plt.subplot(222)
+		plt.plot(np.linspace(.01,1.0,101),self.likelihood)
+		plt.ylabel('P(Action={}|State={})'.format(self.action,self.state))
+		plt.xlabel('Bias')
+		plt.title('Likelihood for Actions, States')
+
+		# Plotting Prior
+		plt.subplot(223)
+		plt.plot(np.linspace(.01,1.0,101), self.prior)
+		plt.ylabel('P(Bias)')
+		plt.xlabel('Bias')
+		plt.title('Prior Probability')
+		plt.tight_layout()
 		plt.show()
 
 
-# infer = InferenceMachine()
-# infer.buildBiasEngine()
+	def expectedPosterior(self):
+		"""
+			Calculates expected value for the posterior distribution.
+		"""
+		expectation = 0
+		x = np.linspace(.01,1.0,101)
+
+		for i in range(len(self.posterior)):
+			expectation += self.posterior[i] * x[i]
+
+		return expectation
 
 
-""" Notes:
+
+infer = InferenceMachine()
+
+
+
+
+
+""" 
+
+	Notes:
 	Change t matrix for state 100, to stay at 100
 
 	ToM appeals to value more than policy?
@@ -354,9 +426,10 @@ class InferenceMachine():
 
 	goodman, learning from bias agents AAAIj
 
-	#
-	Beta bernoulli model (canonical statistical hierarchical model)
 
-
+	2.) generate categorcal
+	3.) Normalize posterior
+	4.) Calculate expected value of posterior after normalized
+	5.) calculate e(x) for several examples,
 
 """
