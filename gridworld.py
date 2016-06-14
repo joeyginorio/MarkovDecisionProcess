@@ -202,7 +202,7 @@ class GridWorld(MDP):
 			if state == 3 or state == 7:
 
 				for i in range(len(self.a)):
-					grid.t[state][i][12] = 1.0
+					self.t[state][i][12] = 1.0
 
 				continue
 			

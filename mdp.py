@@ -231,13 +231,8 @@ class BettingGame(MDP):
 		self.a = np.arange(101)
 
 		# Initialize rewards
-<<<<<<< HEAD
 		self.r = np.zeros(101)
 		self.r[0] = -10
-=======
-		self.r = np.zeros(102)
-		self.r[0] = 0
->>>>>>> deathState
 		self.r[100] = 100
 
 		# Initialize transition matrix
@@ -247,11 +242,6 @@ class BettingGame(MDP):
 		self.t = [self.tHelper(i[0], i[1], i[2], self.pHeads) for i,x in np.ndenumerate(temp)]
 		self.t = np.reshape(self.t, np.shape(temp))
 		
-<<<<<<< HEAD
-		for x in range(len(self.s)):
-			self.t[100][x] = np.zeros(len(self.s))
-			self.t[100][x][100] = 1.0
-=======
 		for x in range(len(self.a)):
 
 			# Send the end game states to the death state!
@@ -259,9 +249,6 @@ class BettingGame(MDP):
 			self.t[100][x][101] = 1.0
 			self.t[0][x] = np.zeros(len(self.s))
 			self.t[0][x][101] = 1.0
->>>>>>> deathState
-
-
 
 	def tHelper(self, x, y, z , pHeads):
 
