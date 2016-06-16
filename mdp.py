@@ -129,18 +129,18 @@ class MDP(object):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
-		self.policy = np.zeros(len(self.s)-1)
+		self.policy = np.zeros(len(self.s))
 
-		for i in range(len(self.s)-1):
+		for i in range(len(self.s)):
 
 			# Take max over all possible actions in state
 			max_a = 0
 
-			for j in range(len(self.s)-1):
+			for j in range(len(self.a)):
 
 				# Account for all possible states a particular action can take you to
 				sum_nextState = 0
-				for k in range(len(self.s)-1):
+				for k in range(len(self.s)):
 					sum_nextState += self.getTransitionStatesAndProbs(i,j)[k] * \
 					(self.getReward(i) + self.discount*self.values[k])
 
