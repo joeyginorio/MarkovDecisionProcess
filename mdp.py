@@ -95,7 +95,7 @@ class MDP(object):
 			# To be used for convergence check
 			oldValues = np.copy(self.values)
 
-			for i in range(len(self.s)):
+			for i in range(len(self.s)-1):
 
 				self.values[i] = self.r[i] + np.max(self.discount* \
 							np.dot(self.t[i][:][:], self.values))
@@ -111,7 +111,7 @@ class MDP(object):
 
 		self.policy = np.zeros([len(self.s),len(self.a)])
 
-		for i in range(len(self.s)):
+		for i in range(len(self.s)-1):
 
 			state_policy = np.zeros(len(self.a))
 
@@ -249,7 +249,7 @@ class BettingGame(MDP):
 		self.pHeads = pHeads
 
 		# Initialize all possible states
-		self.s = np.arange(101)
+		self.s = np.arange(102)
 
 		# Initialize possible actions
 		self.a = np.arange(101)
@@ -266,14 +266,14 @@ class BettingGame(MDP):
 		self.t = [self.tHelper(i[0], i[1], i[2], self.pHeads) for i,x in np.ndenumerate(temp)]
 		self.t = np.reshape(self.t, np.shape(temp))
 		
-		# for x in range(len(self.a)):
+		for x in range(len(self.a)):
 
 		# Remembr to add -1 to value it, and policy extract
-		# 	# Send the end game states to the death state!
-		# 	self.t[100][x] = np.zeros(len(self.s))
-		# 	self.t[100][x][101] = 1.0
-		# 	self.t[0][x] = np.zeros(len(self.s))
-		# 	self.t[0][x][101] = 1.0
+			# Send the end game states to the death state!
+			self.t[100][x] = np.zeros(len(self.s))
+			self.t[100][x][101] = 1.0
+			self.t[0][x] = np.zeros(len(self.s))
+			self.t[0][x][101] = 1.0
 
 	def tHelper(self, x, y, z , pHeads):
 
