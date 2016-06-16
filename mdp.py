@@ -426,7 +426,7 @@ class InferenceMachine():
 
 
 
-# infer = InferenceMachine()
+infer = InferenceMachine()
 
 
 """ 
