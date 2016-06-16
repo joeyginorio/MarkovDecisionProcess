@@ -34,7 +34,7 @@ class MDP(object):
 		self.r = np.array(rewards)
 		self.t = np.array(transitions)
 		
-		self.discount = .95
+		self.discount = .9999
 
 		# Value iteration will update this
 		self.values = None
@@ -77,7 +77,7 @@ class MDP(object):
 		return np.random.choice(self.s, p=self.getTransitionStatesAndProbs(state, action))	
 
 
-	def valueIteration(self, epsilon = .1):
+	def valueIteration(self, epsilon = .01):
 		"""
 			Performs value iteration to populate the values of all states in
 			the MDP. 
@@ -95,7 +95,7 @@ class MDP(object):
 			# To be used for convergence check
 			oldValues = np.copy(self.values)
 
-			for i in range(len(self.s)-1):
+			for i in range(len(self.s)):
 
 				self.values[i] = self.r[i] + np.max(self.discount* \
 							np.dot(self.t[i][:][:], self.values))
@@ -104,14 +104,14 @@ class MDP(object):
 			if np.max(np.abs(self.values - oldValues)) <= epsilon:
 				break
 
-	def extractPolicy(self, tau=.1):
+	def extractPolicy(self, tau):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
 
 		self.policy = np.zeros([len(self.s),len(self.a)])
 
-		for i in range(len(self.s)-1):
+		for i in range(len(self.s)):
 
 			state_policy = np.zeros(len(self.a))
 
@@ -124,6 +124,29 @@ class MDP(object):
 			state_policy /= state_policy.sum()
 
 			self.policy[i] = state_policy
+
+	def extractDeterministicPolicy(self):
+		"""
+			Extract policy from values after value iteration runs.
+		"""
+		self.policy = np.zeros(len(self.s)-1)
+
+		for i in range(len(self.s)-1):
+
+			# Take max over all possible actions in state
+			max_a = 0
+
+			for j in range(len(self.s)-1):
+
+				# Account for all possible states a particular action can take you to
+				sum_nextState = 0
+				for k in range(len(self.s)-1):
+					sum_nextState += self.getTransitionStatesAndProbs(i,j)[k] * \
+					(self.getReward(i) + self.discount*self.values[k])
+
+				if sum_nextState > max_a:
+					max_a = sum_nextState
+					self.policy[i] = j
 
 
 	def simulate(self, state):
@@ -189,13 +212,13 @@ class BettingGame(MDP):
 
 	"""
 
-	def __init__(self, pHeads=.5, epsilon=.01, tau=1):
+	def __init__(self, pHeads=.5, epsilon=.01, tau=.1):
 
 		MDP.__init__(self)
 		self.pHeads = pHeads
 		self.setBettingGame(pHeads)
 		self.valueIteration()
-		self.extractPolicy()
+		self.extractPolicy(tau)
 
 	def getStartState(self):
 		"""
@@ -207,7 +230,7 @@ class BettingGame(MDP):
 		"""
 			Checks if MDP is in terminal state.
 		"""
-		return True if state is 101 else False
+		return True if state is 100 or state is 0 else False
 
 	def setBettingGame(self, pHeads=.5):
 
@@ -226,15 +249,15 @@ class BettingGame(MDP):
 		self.pHeads = pHeads
 
 		# Initialize all possible states
-		self.s = np.arange(102)
+		self.s = np.arange(101)
 
 		# Initialize possible actions
 		self.a = np.arange(101)
 
 		# Initialize rewards
 		self.r = np.zeros(101)
-		self.r[0] = -10
-		self.r[100] = 100
+		self.r[0] = 0
+		self.r[100] = 1
 
 		# Initialize transition matrix
 		temp = np.zeros([len(self.s),len(self.a),len(self.s)])
@@ -243,13 +266,14 @@ class BettingGame(MDP):
 		self.t = [self.tHelper(i[0], i[1], i[2], self.pHeads) for i,x in np.ndenumerate(temp)]
 		self.t = np.reshape(self.t, np.shape(temp))
 		
-		for x in range(len(self.a)):
+		# for x in range(len(self.a)):
 
-			# Send the end game states to the death state!
-			self.t[100][x] = np.zeros(len(self.s))
-			self.t[100][x][101] = 1.0
-			self.t[0][x] = np.zeros(len(self.s))
-			self.t[0][x][101] = 1.0
+		# Remembr to add -1 to value it, and policy extract
+		# 	# Send the end game states to the death state!
+		# 	self.t[100][x] = np.zeros(len(self.s))
+		# 	self.t[100][x][101] = 1.0
+		# 	self.t[0][x] = np.zeros(len(self.s))
+		# 	self.t[0][x][101] = 1.0
 
 	def tHelper(self, x, y, z , pHeads):
 
@@ -354,7 +378,7 @@ class InferenceMachine():
 			likelihood and prior (beta distribution).
 		"""
 		self.prior = np.linspace(.01,1.0,101)
-		self.prior = beta.pdf(self.prior,1.9,1.9)
+		self.prior = beta.pdf(self.prior,1.4,1.4)
 		self.prior /= self.prior.sum()
 
 		self.posterior = self.likelihood * self.prior
@@ -402,10 +426,7 @@ class InferenceMachine():
 
 
 
-infer = InferenceMachine()
-
-
-
+# infer = InferenceMachine()
 
 
 """ 
