@@ -34,7 +34,7 @@ class MDP(object):
 		self.r = np.array(rewards)
 		self.t = np.array(transitions)
 		
-		self.discount = .9999
+		self.discount = .999
 
 		# Value iteration will update this
 		self.values = None
