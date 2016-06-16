@@ -136,7 +136,7 @@ class MDP(object):
 			# Take max over all possible actions in state
 			max_a = 0
 
-			for j in range(len(self.s)-1):
+			for j in range(len(self.a)-1):
 
 				# Account for all possible states a particular action can take you to
 				sum_nextState = 0
