@@ -9,6 +9,8 @@ import numpy as np
 import random
 import pyprind
 from scipy.stats import beta
+from scipy.stats import expon
+from scipy.stats import uniform
 from abc import ABCMeta
 from abc import abstractmethod
 
@@ -77,7 +79,7 @@ class MDP(object):
 		return np.random.choice(self.s, p=self.getTransitionStatesAndProbs(state, action))	
 
 
-	def valueIteration(self, epsilon = .01):
+	def valueIteration(self, epsilon = .0001):
 		"""
 			Performs value iteration to populate the values of all states in
 			the MDP. 
@@ -95,7 +97,7 @@ class MDP(object):
 			# To be used for convergence check
 			oldValues = np.copy(self.values)
 
-			for i in range(len(self.s)):
+			for i in range(len(self.s)-1):
 
 				self.values[i] = self.r[i] + np.max(self.discount* \
 							np.dot(self.t[i][:][:], self.values))
@@ -111,7 +113,7 @@ class MDP(object):
 
 		self.policy = np.zeros([len(self.s),len(self.a)])
 
-		for i in range(len(self.s)):
+		for i in range(len(self.s)-1):
 
 			state_policy = np.zeros(len(self.a))
 
@@ -136,7 +138,11 @@ class MDP(object):
 			# Take max over all possible actions in state
 			max_a = 0
 
+<<<<<<< HEAD
 			for j in range(len(self.a)):
+=======
+			for j in range(len(self.a)-1):
+>>>>>>> deathState
 
 				# Account for all possible states a particular action can take you to
 				sum_nextState = 0
@@ -212,7 +218,7 @@ class BettingGame(MDP):
 
 	"""
 
-	def __init__(self, pHeads=.5, epsilon=.01, tau=.1):
+	def __init__(self, pHeads=.5, epsilon=.1, tau=.1):
 
 		MDP.__init__(self)
 		self.pHeads = pHeads
@@ -249,15 +255,15 @@ class BettingGame(MDP):
 		self.pHeads = pHeads
 
 		# Initialize all possible states
-		self.s = np.arange(101)
+		self.s = np.arange(102)
 
 		# Initialize possible actions
 		self.a = np.arange(101)
 
 		# Initialize rewards
 		self.r = np.zeros(101)
-		self.r[0] = 0
-		self.r[100] = 1
+		self.r[0] = -5
+		self.r[100] = 10
 
 		# Initialize transition matrix
 		temp = np.zeros([len(self.s),len(self.a),len(self.s)])
@@ -266,14 +272,14 @@ class BettingGame(MDP):
 		self.t = [self.tHelper(i[0], i[1], i[2], self.pHeads) for i,x in np.ndenumerate(temp)]
 		self.t = np.reshape(self.t, np.shape(temp))
 		
-		# for x in range(len(self.a)):
+		for x in range(len(self.a)):
 
 		# Remembr to add -1 to value it, and policy extract
-		# 	# Send the end game states to the death state!
-		# 	self.t[100][x] = np.zeros(len(self.s))
-		# 	self.t[100][x][101] = 1.0
-		# 	self.t[0][x] = np.zeros(len(self.s))
-		# 	self.t[0][x][101] = 1.0
+			# Send the end game states to the death state!
+			self.t[100][x] = np.zeros(len(self.s))
+			self.t[100][x][101] = 1.0
+			self.t[0][x] = np.zeros(len(self.s))
+			self.t[0][x][101] = 1.0
 
 	def tHelper(self, x, y, z , pHeads):
 
@@ -377,9 +383,34 @@ class InferenceMachine():
 			Uses inference engine to compute posterior probability from the 
 			likelihood and prior (beta distribution).
 		"""
+
+		# Beta Distribution
+		# self.prior = np.linspace(.01,1.0,101)
+		# self.prior = beta.pdf(self.prior,1.4,1.4)
+		# self.prior /= self.prior.sum()
+
+		# Shifted Exponential
+		# self.prior = np.zeros(101)
+		# for i in range(50):
+		# 	self.prior[i + 50] = i * .02
+		# self.prior[100] = 1.0
+		# self.prior = expon.pdf(self.prior)
+		# self.prior[0:51] = 0
+		# self.prior *= self.prior
+		# self.prior /= self.prior.sum()
+
+		# # Shifted Beta
+		# self.prior = np.linspace(.01,1.0,101)
+		# self.prior = beta.pdf(self.prior,1.2,1.2)
+		# self.prior /= self.prior.sum()
+		# self.prior[0:51] = 0
+
+		# Uniform
 		self.prior = np.linspace(.01,1.0,101)
-		self.prior = beta.pdf(self.prior,1.4,1.4)
+		self.prior = uniform.pdf(self.prior)
 		self.prior /= self.prior.sum()
+		self.prior[0:51] = 0
+
 
 		self.posterior = self.likelihood * self.prior
 		self.posterior /= self.posterior.sum()
@@ -426,5 +457,40 @@ class InferenceMachine():
 
 
 
+<<<<<<< HEAD
 infer = InferenceMachine()
 
+=======
+# infer = InferenceMachine()
+
+
+"""
+(.8 discount expected values)
+
+(20,10) -> .769 | .75, .75, .9, .75, .8, .75, .7, .8		| .7749 Close
+(20,5) -> .668 | .65, .625, .6, .66, .65, .63, .65, .75 	| .6519	Close
+(20,4) -> .607 | .60, .5725, .58, .63, .6, .6, .6, .6		| .5978 Close
+(20,1) -> .591 | .5, .53125, .51, .5, .5, .5, .5, .5		| .5052 Eh
+
+(40,5) -> .585  | .6, .5725, .65, .55, .6, .56, .5, .6		| .5791 Close
+(40,10) -> .650 | .65, .625, .7, .6, .65, .63, .55, .65		| .6319 Close
+(40,20) -> .777 | .75, .75, .95, .7, .8, .75, .75, .75		| .7749 Close
+(40,40) -> .646 | 1.0, 1.0, 1.0, 1.0, .95, .9, 1.0, .9		| .9688 Eh
+
+(80,1) -> .581  | .5, .515625, .51, .5, .65, .5, .5, .5		| .522 Eh
+(80,5) -> .578  | .55, .53125, .55, .56, .75, .65, .5, .6	| .586 Close
+(80,10) -> .605 | .6, .5725, .6, .67, .85, .75, .6, .7		| .668 Eh 
+(80,20) -> .683 | .65, .625, .65, .75, .95, .9, .65, .8		| .749 Eh
+"""
+
+"""
+
+Model can't capture intuition that betting all your money means you
+probably are going to win. I can modify it to capture that intuition, but 
+then the rest of the model breaks.
+
+ x axis - model judgement
+ y axis - participant judgement 
+
+ """
+>>>>>>> deathState
