@@ -138,11 +138,8 @@ class MDP(object):
 			# Take max over all possible actions in state
 			max_a = 0
 
-<<<<<<< HEAD
-			for j in range(len(self.a)):
-=======
+
 			for j in range(len(self.a)-1):
->>>>>>> deathState
 
 				# Account for all possible states a particular action can take you to
 				sum_nextState = 0
@@ -191,9 +188,6 @@ class MDP(object):
 
 				# print "Terminal state: {} has been reached. Simulation over.".format(state)
 				return state
-
-
-
 
 
 class BettingGame(MDP):
@@ -456,11 +450,6 @@ class InferenceMachine():
 		return expectation
 
 
-
-<<<<<<< HEAD
-infer = InferenceMachine()
-
-=======
 # infer = InferenceMachine()
 
 
@@ -493,4 +482,4 @@ then the rest of the model breaks.
  y axis - participant judgement 
 
  """
->>>>>>> deathState
+
