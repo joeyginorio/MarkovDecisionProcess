@@ -428,29 +428,3 @@ class InferenceMachine():
 
 infer = InferenceMachine()
 
-
-""" 
-
-	Notes:
-	Change t matrix for state 100, to stay at 100
-
-	ToM appeals to value more than policy?
-	Encoding rewards, values in the brain (look up papers)
-
-	RTBJ at work during ToM
-
-	********First Chapter of Vision:
-		Computational, algorithmic, implementation
-
-	AlarmClock
-	Candle
-
-	goodman, learning from bias agents AAAIj
-
-
-	2.) generate categorcal
-	3.) Normalize posterior
-	4.) Calculate expected value of posterior after normalized
-	5.) calculate e(x) for several examples,
-
-"""
