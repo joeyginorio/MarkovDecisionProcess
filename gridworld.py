@@ -35,7 +35,7 @@ class GridWorld(MDP):
 		self.colLen = 3
 		self.setGridWorld()
 		self.valueIteration()
-		self.extractPolicy()
+		self.extractPolicy(.01)
 
 
 	def getStartState(self):
