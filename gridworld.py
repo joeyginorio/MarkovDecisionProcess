@@ -4,35 +4,28 @@
 # - Includes BettingGame example
 
 from mdp import MDP
+from scipy.stats import uniform
+from scipy.stats import beta
+from scipy.stats import expon
 import numpy as np
 import random
+import pyprind
+import matplotlib.pyplot as plt
+
 
 
 class GridWorld(MDP):
 	"""
 		 Defines a gridworld environment to be solved by an MDP!
-		 Uses the grid example from the Sutton, Barto text.
-
-		 	GridWorld Map:
-
-			A = agent
-		   ||| = obstacle
-		   +1/-1 = Reward
-		   
-			-----------------
-			|	|	|	|+1	|
-			-----------------
-			|	||||	|-1	|	
-			-----------------
-			| A	|	|	|	|
-			-----------------
-
 	"""
-	def __init__(self):
+	def __init__(self, goalA, goalB):
 
 		MDP.__init__(self)
-		self.rowLen = 4
+		self.rowLen = 3
 		self.colLen = 3
+
+		self.goalA = goalA
+		self.goalB = goalB
 		self.setGridWorld()
 		self.valueIteration()
 		self.extractPolicy(.01)
@@ -42,22 +35,19 @@ class GridWorld(MDP):
 		"""
 			Specifies starting coordinate for gridworld.
 		"""
-		return 8 
+		return 8
 
 
 	def isTerminal(self, state):
 		"""
 			Specifies terminal conditions for gridworld.
 		"""
-		return True if state == 3 or state == 7 else False
+		return True if state == 0 or state == 6 else False
 
 	def isObstacle(self, sCoord):
 		""" 
 			Checks if a state is a wall or obstacle.
 		"""
-		if sCoord[0] == 1 and sCoord[1] == 1:
-			return True
-
 		if sCoord[0] > (self.colLen - 1) or sCoord[0] < 0:
 			return True
 
@@ -182,16 +172,16 @@ class GridWorld(MDP):
 			Initializes states, actions, rewards, transition matrix.
 		"""
 
-		# 12 Possible coordinate positions + Death State
-		self.s = np.arange(13)
+		# 9 Possible coordinate positions + Death State
+		self.s = np.arange(10)
 
 		# 4 Actions {Up, Down, Left, Right}
 		self.a = np.arange(4)
 
 		# 2 Reward Zones
 		self.r = np.zeros(len(self.s))
-		self.r[3] = 100
-		self.r[7] = -100
+		self.r[0] = self.goalA
+		self.r[6] = self.goalB
 
 		# Transition Matrix
 		self.t = np.zeros([len(self.s),len(self.a),len(self.s)])
@@ -199,10 +189,10 @@ class GridWorld(MDP):
 		for state in range(len(self.s)):
 			possibleActions = self.getPossibleActions(self.scalarToCoord(state))
 
-			if state == 3 or state == 7:
+			if state == 0 or state == 6:
 
 				for i in range(len(self.a)):
-					self.t[state][i][12] = 1.0
+					self.t[state][i][9] = 1.0
 
 				continue
 			
@@ -214,13 +204,13 @@ class GridWorld(MDP):
 					currentState = self.scalarToCoord(state)
 
 					nextState = self.takeAction(currentState, 0)
-					self.t[state][action][self.coordToScalar(nextState)] += .8
+					self.t[state][action][self.coordToScalar(nextState)] += 1.0
 
-					nextState = self.takeAction(currentState, 2)
-					self.t[state][action][self.coordToScalar(nextState)] += .1
+					# nextState = self.takeAction(currentState, 2)
+					# self.t[state][action][self.coordToScalar(nextState)] += .1
 
-					nextState = self.takeAction(currentState, 3)
-					self.t[state][action][self.coordToScalar(nextState)] += .1
+					# nextState = self.takeAction(currentState, 3)
+					# self.t[state][action][self.coordToScalar(nextState)] += .1
 
 				if action == 1:
 
@@ -283,6 +273,144 @@ class GridWorld(MDP):
 
 				print "Terminal state: {} has been reached. Simulation over.".format(self.scalarToCoord(state))
 				
+
+class InferenceMachine():
+	"""
+		Conducts inference via MDPs for the BettingGame.
+	"""
+	def __init__(self, space):
+		self.sims = list()
+
+		self.likelihood = None
+		self.posterior = None
+		self.prior = None
+
+		self.space = space
+		self.test = list()
+
+		for i in range(space):
+			for j in range(space):
+				self.test.append([i,j])
+
+		self.buildBiasEngine()
+
+
+	def inferSummary(self, state, action):
+		self.inferLikelihood(state, action)
+		self.inferPosterior(state, action)
+		self.expectedPosterior()
+		# self.plotDistributions()
+
+	def buildBiasEngine(self):
+		""" 
+			Simulates MDPs with varying bias to build a bias inference engine.
+		"""
+
+		print "Loading MDPs...\n"
+
+		# Unnecessary progress bar for terminal
+		bar = pyprind.ProgBar(len(self.test))
+		for i in self.test:
+			self.sims.append(GridWorld(i[0], i[1]))
+			bar.update()
+
+		print "\nDone loading MDPs..."
+
+
+	def inferLikelihood(self, state, action):
+		"""
+			Uses inference engine to inferBias predicated on an agents'
+			actions and current state.
+		"""
+
+		self.state = state
+		self.action = action
+
+		self.likelihood = list()
+		for i in range(len(self.sims)):
+			self.likelihood.append(self.sims[i].policy[state][action])
+
+
+	def inferPosterior(self, state, action):
+		"""
+			Uses inference engine to compute posterior probability from the 
+			likelihood and prior (beta distribution).
+		"""
+
+		# Beta Distribution
+		# self.prior = np.linspace(.01,1.0,101)
+		# self.prior = beta.pdf(self.prior,1.4,1.4)
+		# self.prior /= self.prior.sum()
+
+		# Shifted Exponential
+		# self.prior = np.zeros(101)
+		# for i in range(50):
+		# 	self.prior[i + 50] = i * .02
+		# self.prior[100] = 1.0
+		# self.prior = expon.pdf(self.prior)
+		# self.prior[0:51] = 0
+		# self.prior *= self.prior
+		# self.prior /= self.prior.sum()
+
+		# # Shifted Beta
+		# self.prior = np.linspace(.01,1.0,101)
+		# self.prior = beta.pdf(self.prior,1.2,1.2)
+		# self.prior /= self.prior.sum()
+		# self.prior[0:51] = 0
+
+		# Uniform
+		self.prior = np.zeros(len(self.sims))
+		self.prior = uniform.pdf(self.prior)
+		self.prior /= self.prior.sum()
+		# self.prior[0:51] = 0
+
+
+		self.posterior = self.likelihood * self.prior
+		self.posterior /= self.posterior.sum()
+
+
+	def plotDistributions(self):
+
+		# Plotting Posterior
+		# plt.figure(1)
+		# plt.subplot(221)
+		plt.plot(np.linspace(0,.99,100), self.posterior, '.')
+		plt.xticks(np.linspace(.01,.99,100), np.arange(0,101,1))
+		plt.ylabel('P(Action={}|State={})'.format(self.action, self.state))
+		plt.xlabel('Bias')
+		plt.title('Posterior Probability for Bias')
+
+		# Plotting Likelihood
+		# plt.subplot(222)
+		# plt.plot(np.linspace(.01,.99,100),self.likelihood)
+		# plt.ylabel('P(Action={}|State={})'.format(self.action,self.state))
+		# plt.xlabel('Bias')
+		# plt.title('Likelihood for Actions, States')
+
+		# # Plotting Prior
+		# plt.subplot(223)
+		# plt.plot(np.linspace(.01,.99,100), self.prior)
+		# plt.ylabel('P(Bias)')
+		# plt.xlabel('Bias')
+		# plt.title('Prior Probability')
+		# plt.tight_layout()
+		plt.show()
+
+
+	def expectedPosterior(self):
+		"""
+			Calculates expected value for the posterior distribution.
+		"""
+		expectation_a = 0
+		expectation_b = 0
+		x = range(len(self.posterior))
+
+		for i in range(len(self.posterior)):
+			expectation_a += self.test[i][0] * infer.posterior[i]
+			expectation_b += self.test[i][1] * infer.posterior[i]
+
+		print "Expectation of Goal A: {}".format(expectation_a)
+		print "Expectation of Goal B: {}".format(expectation_b)
 
 
 

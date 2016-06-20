@@ -36,7 +36,7 @@ class MDP(object):
 		self.r = np.array(rewards)
 		self.t = np.array(transitions)
 		
-		self.discount = .999
+		self.discount = .95
 
 		# Value iteration will update this
 		self.values = None
@@ -79,7 +79,7 @@ class MDP(object):
 		return np.random.choice(self.s, p=self.getTransitionStatesAndProbs(state, action))	
 
 
-	def valueIteration(self, epsilon = .0001):
+	def valueIteration(self, epsilon = .01):
 		"""
 			Performs value iteration to populate the values of all states in
 			the MDP. 
@@ -99,7 +99,7 @@ class MDP(object):
 
 			for i in range(len(self.s)-1):
 
-				self.values[i] = self.r[i] + np.max(self.discount* \
+				self.values[i] = self.r[i] + np.max(self.discount * \
 							np.dot(self.t[i][:][:], self.values))
 
 			# Check Convergence
@@ -133,17 +133,17 @@ class MDP(object):
 		"""
 		self.policy = np.zeros(len(self.s))
 
-		for i in range(len(self.s)):
+		for i in range(len(self.s)-1):
 
 			# Take max over all possible actions in state
 			max_a = 0
 
 
-			for j in range(len(self.a)-1):
+			for j in range(len(self.a)):
 
 				# Account for all possible states a particular action can take you to
 				sum_nextState = 0
-				for k in range(len(self.s)):
+				for k in range(len(self.s)-1):
 					sum_nextState += self.getTransitionStatesAndProbs(i,j)[k] * \
 					(self.getReward(i) + self.discount*self.values[k])
 
