@@ -3,6 +3,7 @@
 # ---------------------------------
 
 from MDP import MDP
+from Grid import Grid
 from scipy.stats import uniform
 from scipy.stats import beta
 from scipy.stats import expon
@@ -37,6 +38,9 @@ class GridWorld(MDP):
 		""" 
 			Checks if a state is a wall or obstacle.
 		"""
+		if tuple(sCoord) in self.grid.walls:
+			return True
+
 		if sCoord[0] > (self.grid.row - 1) or sCoord[0] < 0:
 			return True
 
@@ -194,13 +198,8 @@ class GridWorld(MDP):
 					currentState = self.scalarToCoord(state)
 
 					nextState = self.takeAction(currentState, 0)
-					self.t[state][action][self.coordToScalar(nextState)] += 1.0
+					self.t[state][action][self.coordToScalar(nextState)] = 1.0
 
-					# nextState = self.takeAction(currentState, 2)
-					# self.t[state][action][self.coordToScalar(nextState)] += .1
-
-					# nextState = self.takeAction(currentState, 3)
-					# self.t[state][action][self.coordToScalar(nextState)] += .1
 
 				if action == 1:
 
