@@ -107,7 +107,7 @@ class MDP(object):
 			# To be used for convergence check
 			oldValues = np.copy(self.values)
 
-			for i in range(len(self.s)-1):
+			for i in range(len(self.s)):
 
 				self.values[i] = self.r[i] + np.max(self.discount * \
 							np.dot(self.t[i][:][:], self.values))
@@ -127,7 +127,7 @@ class MDP(object):
 
 		self.policy = np.zeros([len(self.s),len(self.a)])
 
-		for i in range(len(self.s)-1):
+		for i in range(len(self.s)):
 
 			state_policy = np.zeros(len(self.a))
 
@@ -147,7 +147,7 @@ class MDP(object):
 		"""
 		self.policy = np.zeros(len(self.s))
 
-		for i in range(len(self.s)-1):
+		for i in range(len(self.s)):
 
 			# Take max over all possible actions in state
 			max_a = 0
@@ -157,7 +157,7 @@ class MDP(object):
 
 				# Account for all possible states a particular action can take you to
 				sum_nextState = 0
-				for k in range(len(self.s)-1):
+				for k in range(len(self.s)):
 					sum_nextState += self.getTransitionStatesAndProbs(i,j)[k] * \
 					(self.getReward(i) + self.discount*self.values[k])
 

@@ -166,7 +166,7 @@ class GridWorld(MDP):
 		"""
 
 		# Possible coordinate positions + Death State
-		self.s = np.arange(self.grid.row*self.grid.col + 1)
+		self.s = np.arange(self.grid.row*self.grid.col)
 
 		# 4 Actions {Up, Down, Left, Right}
 		self.a = np.arange(4)
@@ -182,13 +182,6 @@ class GridWorld(MDP):
 
 		for state in range(len(self.s)):
 			possibleActions = self.getPossibleActions(self.scalarToCoord(state))
-
-			if self.isTerminal(state):
-
-				for i in range(len(self.a)):
-					self.t[state][i][len(self.s)-1] = 1.0
-
-				continue
 
 			for action in self.a:
 
