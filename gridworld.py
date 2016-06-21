@@ -18,40 +18,32 @@ class GridWorld(MDP):
 	"""
 		 Defines a gridworld environment to be solved by an MDP!
 	"""
-	def __init__(self, goalA, goalB):
+	def __init__(self, grid, goalVals, discount=.99, tau=.01, epsilon=.001):
 
-		MDP.__init__(self)
-		self.rowLen = 3
-		self.colLen = 3
+		MDP.__init__(self, discount=discount, tau=tau, epsilon=epsilon)
 
-		self.goalA = goalA
-		self.goalB = goalB
+		self.goalVals = goalVals
+		self.grid = grid
+
 		self.setGridWorld()
 		self.valueIteration()
-		self.extractPolicy(.01)
-
-
-	def getStartState(self):
-		"""
-			Specifies starting coordinate for gridworld.
-		"""
-		return 8
+		self.extractPolicy()
 
 
 	def isTerminal(self, state):
 		"""
 			Specifies terminal conditions for gridworld.
 		"""
-		return True if state == 0 or state == 6 else False
+		return True if tuple(self.scalarToCoord(state)) in self.grid.rewards else False
 
 	def isObstacle(self, sCoord):
 		""" 
 			Checks if a state is a wall or obstacle.
 		"""
-		if sCoord[0] > (self.colLen - 1) or sCoord[0] < 0:
+		if sCoord[0] > (self.grid.row - 1) or sCoord[0] < 0:
 			return True
 
-		if sCoord[1] > (self.rowLen - 1) or sCoord[1] < 0:
+		if sCoord[1] > (self.grid.col - 1) or sCoord[1] < 0:
 			return True
 
 		return False
@@ -138,13 +130,13 @@ class GridWorld(MDP):
 		""" 
 			Convert state coordinates to corresponding scalar state value.
 		"""
-		return sCoord[0]*(self.rowLen) + sCoord[1]
+		return sCoord[0]*(self.grid.col) + sCoord[1]
 
 	def scalarToCoord(self, scalar):
 		"""
 			Convert scalar state value into coordinates.
 		"""
-		return np.array([scalar / self.rowLen, scalar % self.rowLen])
+		return np.array([scalar / self.grid.col, scalar % self.grid.col])
 
 	def getPossibleActions(self, sCoord):
 		"""
@@ -172,16 +164,17 @@ class GridWorld(MDP):
 			Initializes states, actions, rewards, transition matrix.
 		"""
 
-		# 9 Possible coordinate positions + Death State
-		self.s = np.arange(10)
+		# Possible coordinate positions + Death State
+		self.s = np.arange(self.grid.row*self.grid.col + 1)
 
 		# 4 Actions {Up, Down, Left, Right}
 		self.a = np.arange(4)
 
-		# 2 Reward Zones
+		# Reward Zones
 		self.r = np.zeros(len(self.s))
-		self.r[0] = self.goalA
-		self.r[6] = self.goalB
+		
+		for i in range(len(self.grid.rewards)):
+			self.r[self.coordToScalar(self.grid.rewards[i])] = self.goalVals[i]
 
 		# Transition Matrix
 		self.t = np.zeros([len(self.s),len(self.a),len(self.s)])
@@ -189,13 +182,13 @@ class GridWorld(MDP):
 		for state in range(len(self.s)):
 			possibleActions = self.getPossibleActions(self.scalarToCoord(state))
 
-			if state == 0 or state == 6:
+			if self.isTerminal(state):
 
 				for i in range(len(self.a)):
-					self.t[state][i][9] = 1.0
+					self.t[state][i][len(self.s)-1] = 1.0
 
 				continue
-			
+
 			for action in self.a:
 
 				# Up
@@ -278,12 +271,16 @@ class InferenceMachine():
 	"""
 		Conducts inference via MDPs for the BettingGame.
 	"""
-	def __init__(self, space):
+	def __init__(self, space=10, discount=.99, tau=.01, epsilon=.01):
 		self.sims = list()
 
 		self.likelihood = None
 		self.posterior = None
 		self.prior = None
+
+		self.discount = discount
+		self.tau = tau
+		self.epsilon = epsilon
 
 		self.space = space
 		self.test = list()
@@ -311,7 +308,7 @@ class InferenceMachine():
 		# Unnecessary progress bar for terminal
 		bar = pyprind.ProgBar(len(self.test))
 		for i in self.test:
-			self.sims.append(GridWorld(i[0], i[1]))
+			self.sims.append(GridWorld(i[0], i[1], self.discount, self.tau, self.epsilon))
 			bar.update()
 
 		print "\nDone loading MDPs..."
@@ -331,38 +328,41 @@ class InferenceMachine():
 			self.likelihood.append(self.sims[i].policy[state][action])
 
 
-	def inferPosterior(self, state, action):
+	def inferPosterior(self, state, action, prior='uniform'):
 		"""
 			Uses inference engine to compute posterior probability from the 
 			likelihood and prior (beta distribution).
 		"""
 
-		# Beta Distribution
-		# self.prior = np.linspace(.01,1.0,101)
-		# self.prior = beta.pdf(self.prior,1.4,1.4)
-		# self.prior /= self.prior.sum()
+		if prior == 'beta':
+			# Beta Distribution
+			self.prior = np.linspace(.01,1.0,101)
+			self.prior = beta.pdf(self.prior,1.4,1.4)
+			self.prior /= self.prior.sum()
 
-		# Shifted Exponential
-		# self.prior = np.zeros(101)
-		# for i in range(50):
-		# 	self.prior[i + 50] = i * .02
-		# self.prior[100] = 1.0
-		# self.prior = expon.pdf(self.prior)
-		# self.prior[0:51] = 0
-		# self.prior *= self.prior
-		# self.prior /= self.prior.sum()
+		elif prior == 'shiftExponential':
+			# Shifted Exponential
+			self.prior = np.zeros(101)
+			for i in range(50):
+				self.prior[i + 50] = i * .02
+			self.prior[100] = 1.0
+			self.prior = expon.pdf(self.prior)
+			self.prior[0:51] = 0
+			self.prior *= self.prior
+			self.prior /= self.prior.sum()
 
-		# # Shifted Beta
-		# self.prior = np.linspace(.01,1.0,101)
-		# self.prior = beta.pdf(self.prior,1.2,1.2)
-		# self.prior /= self.prior.sum()
-		# self.prior[0:51] = 0
+		elif prior == 'shiftBeta':
+			# Shifted Beta
+			self.prior = np.linspace(.01,1.0,101)
+			self.prior = beta.pdf(self.prior,1.2,1.2)
+			self.prior /= self.prior.sum()
+			self.prior[0:51] = 0
 
-		# Uniform
-		self.prior = np.zeros(len(self.sims))
-		self.prior = uniform.pdf(self.prior)
-		self.prior /= self.prior.sum()
-		# self.prior[0:51] = 0
+		elif prior == 'uniform':
+			# Uniform
+			self.prior = np.zeros(len(self.sims))	
+			self.prior = uniform.pdf(self.prior)
+			self.prior /= self.prior.sum()
 
 
 		self.posterior = self.likelihood * self.prior
@@ -370,31 +370,10 @@ class InferenceMachine():
 
 
 	def plotDistributions(self):
-
-		# Plotting Posterior
-		# plt.figure(1)
-		# plt.subplot(221)
-		plt.plot(np.linspace(0,.99,100), self.posterior, '.')
-		plt.xticks(np.linspace(.01,.99,100), np.arange(0,101,1))
-		plt.ylabel('P(Action={}|State={})'.format(self.action, self.state))
-		plt.xlabel('Bias')
-		plt.title('Posterior Probability for Bias')
-
-		# Plotting Likelihood
-		# plt.subplot(222)
-		# plt.plot(np.linspace(.01,.99,100),self.likelihood)
-		# plt.ylabel('P(Action={}|State={})'.format(self.action,self.state))
-		# plt.xlabel('Bias')
-		# plt.title('Likelihood for Actions, States')
-
-		# # Plotting Prior
-		# plt.subplot(223)
-		# plt.plot(np.linspace(.01,.99,100), self.prior)
-		# plt.ylabel('P(Bias)')
-		# plt.xlabel('Bias')
-		# plt.title('Prior Probability')
-		# plt.tight_layout()
-		plt.show()
+		""" 
+		Plots the prior, likelihood, and posterior distributions. 
+		"""
+		pass
 
 
 	def expectedPosterior(self):
@@ -403,14 +382,103 @@ class InferenceMachine():
 		"""
 		expectation_a = 0
 		expectation_b = 0
+		aGreaterB = 0
+		aLessB = 0
+		aEqualB = 0
+
 		x = range(len(self.posterior))
 
 		for i in range(len(self.posterior)):
-			expectation_a += self.test[i][0] * infer.posterior[i]
-			expectation_b += self.test[i][1] * infer.posterior[i]
+
+			e_a = self.test[i][0] * infer.posterior[i]
+			e_b = self.test[i][1] * infer.posterior[i]
+
+			expectation_a += e_a
+			expectation_b += e_b
+
+			# print "R_A: {}, R_B: {}".format(self.test[i][0], self.test[i][1])
+			# print "E_a: {}".format(e_a)
+			# print "E_b: {}\n".format(e_b)
+
+			
+			if self.test[i][0] > self.test[i][1]:
+				aGreaterB += self.posterior[i]
+
+			elif self.test[i][0] < self.test[i][1]:
+				aLessB += self.posterior[i]
+
+			elif self.test[i][0] == self.test[i][1]:
+				aEqualB += self.posterior[i]
+		
+		# print aGreaterB
+
+
+		print "Chance that agent prefers A over B: {}".format(aGreaterB)
+		print "Chance that agent prefers B over A: {}".format(aLessB)
+		print "Chance that agent prefers A and B equally: {}".format(aEqualB)
 
 		print "Expectation of Goal A: {}".format(expectation_a)
 		print "Expectation of Goal B: {}".format(expectation_b)
+
+class Grid():
+	"""
+
+		Defines the necessary environment elements for several variations
+		of GridWorld to be easily constructed by GridWorld().
+
+	"""
+
+	def __init__(self, grid='bookGrid'):
+		self.row = 0
+		self.col = 0
+
+		self.rewards = list()
+		self.walls = list()
+
+		if grid == 'bookGrid':
+			self.getBookGrid()
+
+		elif grid == 'testGrid':
+			self.getTestGrid()
+
+
+	def setGrid(self, fileName):
+		""" 
+			Initializes grid to the desired gridWorld configuration.
+		"""
+		gridBuffer = np.loadtxt(fileName, dtype=str)
+
+		self.row = len(gridBuffer)
+		self.col = len(gridBuffer[0])
+
+		gridMatrix = np.empty([self.row,self.col], dtype=str)
+
+		for i in range(self.row):
+			gridMatrix[i] = list(gridBuffer[i])
+
+		self.rewards = zip(*np.where(gridMatrix == 'R'))
+		self.walls = zip(*np.where(gridMatrix == 'W'))
+
+
+	def getBookGrid(self):
+		""" 
+			Builds the canonical gridWorld example from the Sutton,
+			Barto book.
+		"""
+		fileName = 'gridWorlds/bookGrid.txt'
+		self.setGrid(fileName)
+		
+	def getTestGrid(self):
+		"""
+			Builds a test grid, use this to quickly try out different
+			gridworld environments. Simply modify the existing testGrid.txt
+			file.
+		"""
+		fileName = 'gridWorlds/testGrid.txt'
+		self.setGrid(fileName)
+
+		
+
 
 
 

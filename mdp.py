@@ -30,24 +30,21 @@ class MDP(object):
 
 	__metaclass__ = ABCMeta
 	
-	def __init__(self, states=None, actions=None, rewards=None, transitions=None):
+	def __init__(self, states=None, actions=None, rewards=None, transitions=None, 
+				discount=.99, tau=.01, epsilon=.01):
+
 		self.s = np.array(states)
 		self.a = np.array(actions)
 		self.r = np.array(rewards)
 		self.t = np.array(transitions)
 		
-		self.discount = .95
+		self.discount = discount
+		self.tau = tau
+		self.epsilon = epsilon
 
 		# Value iteration will update this
 		self.values = None
 		self.policy = None
-
-	@abstractmethod
-	def getStartState(self, state):
-		"""
-			Returns the start state of MDP
-		"""
-		raise NotImplementedError()
 
 	@abstractmethod
 	def isTerminal(self, state):
@@ -79,7 +76,7 @@ class MDP(object):
 		return np.random.choice(self.s, p=self.getTransitionStatesAndProbs(state, action))	
 
 
-	def valueIteration(self, epsilon = .01):
+	def valueIteration(self):
 		"""
 			Performs value iteration to populate the values of all states in
 			the MDP. 
@@ -103,10 +100,10 @@ class MDP(object):
 							np.dot(self.t[i][:][:], self.values))
 
 			# Check Convergence
-			if np.max(np.abs(self.values - oldValues)) <= epsilon:
+			if np.max(np.abs(self.values - oldValues)) <= self.epsilon:
 				break
 
-	def extractPolicy(self, tau):
+	def extractPolicy(self):
 		"""
 			Extract policy from values after value iteration runs.
 		"""
@@ -122,7 +119,7 @@ class MDP(object):
 
 			# Softmax the policy			
 			state_policy -= np.max(state_policy)
-			state_policy = np.exp(state_policy / float(tau))
+			state_policy = np.exp(state_policy / float(self.tau))
 			state_policy /= state_policy.sum()
 
 			self.policy[i] = state_policy
@@ -212,19 +209,13 @@ class BettingGame(MDP):
 
 	"""
 
-	def __init__(self, pHeads=.5, epsilon=.1, tau=.1):
+	def __init__(self, pHeads=.5, discount=.99, epsilon=.1, tau=.001):
 
-		MDP.__init__(self)
+		MDP.__init__(self,discount=discount,tau=tau,epsilon=epsilon)
 		self.pHeads = pHeads
 		self.setBettingGame(pHeads)
 		self.valueIteration()
-		self.extractPolicy(tau)
-
-	def getStartState(self):
-		"""
-			Returns the start state of MDP
-		"""
-		return self.cash
+		self.extractPolicy()
 
 	def isTerminal(self, state):
 		"""
