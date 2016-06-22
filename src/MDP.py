@@ -90,19 +90,21 @@ class MDP(object):
 		self.policy = np.zeros([len(self.s), len(self.a)])
 
 		policy_switch = 0
+		iteration = 0
 
 		# Loop until convergence
 		while True:
 
-			oldPolicy = np.argmax(self.policy, axis=1)
-			self.extractPolicy()
-			newPolicy = np.argmax(self.policy, axis=1)
-
-
-			if not np.array_equal(oldPolicy, newPolicy):
-				policy_switch += 1
-
-			print "Policy switch count: {}".format(policy_switch)
+			# TESTING ################
+			# oldPolicy = np.argmax(self.policy, axis=1)
+			# self.extractPolicy()
+			# newPolicy = np.argmax(self.policy, axis=1)
+			# if not np.array_equal(oldPolicy, newPolicy):
+			# 	policy_switch += 1
+			# iteration += 1
+			# print "Iteration: {}".format(iteration)
+			# print "Policy switch count: {}".format(policy_switch)
+			###########################
 
 			# To be used for convergence check
 			oldValues = np.copy(self.values)
@@ -112,12 +114,15 @@ class MDP(object):
 				self.values[i] = self.r[i] + np.max(self.discount * \
 							np.dot(self.t[i][:][:], self.values))
 
-			print "Convergence Measure: {}".format(np.max(np.abs(self.values - oldValues)))
-			print "-------------------------------------"
+			# TESTING #################
+			# print "Convergence Measure: {}".format(np.max(np.abs(self.values - oldValues)))
+			# print np.argmax(self.policy[28])
+			# print "-------------------------------------"
+			###########################
+
 			# Check Convergence
 			if np.max(np.abs(self.values - oldValues)) <= self.epsilon:
 				break
-
 
 
 	def extractPolicy(self):
