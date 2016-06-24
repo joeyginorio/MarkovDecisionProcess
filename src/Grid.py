@@ -40,8 +40,8 @@ class Grid():
 		for i in range(self.row):
 			gridMatrix[i] = list(gridBuffer[i])
 
-		self.rewards = zip(*np.where(gridMatrix == 'R'))
-		self.walls = zip(*np.where(gridMatrix == 'W'))
+		self.rewards = zip(*np.where(gridMatrix == 'O'))
+		self.walls = zip(*np.where(gridMatrix == '#'))
 
 
 	def getBookGrid(self):
