@@ -16,7 +16,7 @@ class Grid():
 		self.row = 0
 		self.col = 0
 
-		self.rewards = list()
+		self.objects = list()
 		self.walls = list()
 
 		if grid == 'bookGrid':
@@ -40,7 +40,7 @@ class Grid():
 		for i in range(self.row):
 			gridMatrix[i] = list(gridBuffer[i])
 
-		self.rewards = zip(*np.where(gridMatrix == 'O'))
+		self.objects = zip(*np.where(gridMatrix == 'O'))
 		self.walls = zip(*np.where(gridMatrix == '#'))
 
 
