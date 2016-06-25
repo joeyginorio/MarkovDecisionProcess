@@ -32,7 +32,7 @@ class GridWorld(MDP):
 		"""
 			Specifies terminal conditions for gridworld.
 		"""
-		return True if tuple(self.scalarToCoord(state)) in self.grid.rewards else False
+		return True if tuple(self.scalarToCoord(state)) in self.grid.objects.values() else False
 
 	def isObstacle(self, sCoord):
 		""" 
@@ -174,8 +174,8 @@ class GridWorld(MDP):
 		# Reward Zones
 		self.r = np.zeros(len(self.s))
 		
-		for i in range(len(self.grid.rewards)):
-			self.r[self.coordToScalar(self.grid.rewards[i])] = self.goalVals[i]
+		for i in range(len(self.grid.objects)):
+			self.r[self.coordToScalar(self.grid.objects.values()[i])] = self.goalVals[i]
 
 		# Transition Matrix
 		self.t = np.zeros([len(self.s),len(self.a),len(self.s)])
@@ -236,9 +236,11 @@ class GridWorld(MDP):
 		# Run simulation using policy until terminal condition met
 		
 		actions = ['up', 'down', 'left', 'right']
+		count = 0
 
 		while not self.isTerminal(state):
 
+			count += 1
 			# Determine which policy to use (non-deterministic)
 			policy = self.policy[np.where(self.s == state)[0][0]]
 			p_policy = self.policy[np.where(self.s == state)[0][0]] / \
@@ -253,15 +255,16 @@ class GridWorld(MDP):
 			nextState = self.takeAction(self.scalarToCoord(int(stateIndex)), int(actionIndex))
 			nextState = self.coordToScalar(nextState)
 
-			print "In state: {}, taking action: {}, moving to state: {}".format(
-				self.scalarToCoord(state), actions[actionIndex], self.scalarToCoord(nextState))
+			# print "In state: {}, taking action: {}, moving to state: {}".format(
+				# self.scalarToCoord(state), actions[actionIndex], self.scalarToCoord(nextState))
 
 			# End game if terminal state reached
 			state = int(nextState)
-			if self.isTerminal(state):
+			# if self.isTerminal(state):
 
-				print "Terminal state: {} has been reached. Simulation over.".format(self.scalarToCoord(state))
-				
+				# print "Terminal state: {} has been reached. Simulation over.".format(self.scalarToCoord(state))
+		
+		return count
 
 
 

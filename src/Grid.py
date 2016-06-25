@@ -3,6 +3,7 @@
 # ---------------------------------
 
 import numpy as np
+from collections import OrderedDict
 
 class Grid():
 	"""
@@ -16,8 +17,10 @@ class Grid():
 		self.row = 0
 		self.col = 0
 
-		self.objects = list()
+
+		self.objects = OrderedDict()
 		self.walls = list()
+		
 
 		if grid == 'bookGrid':
 			self.getBookGrid()
@@ -32,6 +35,15 @@ class Grid():
 		"""
 		gridBuffer = np.loadtxt(fileName, dtype=str)
 
+		numObjects = int(gridBuffer[0])
+		objectNames = list()
+		objects = list()
+
+		for i in range(numObjects):
+			objectNames.append(gridBuffer[i+1])
+
+		gridBuffer = gridBuffer[(numObjects+1):]
+
 		self.row = len(gridBuffer)
 		self.col = len(gridBuffer[0])
 
@@ -40,8 +52,14 @@ class Grid():
 		for i in range(self.row):
 			gridMatrix[i] = list(gridBuffer[i])
 
-		self.objects = zip(*np.where(gridMatrix == 'O'))
-		self.walls = zip(*np.where(gridMatrix == '#'))
+		objects = zip(*np.where(gridMatrix == 'O'))
+		self.walls = zip(*np.where(gridMatrix == 'W'))
+		start = zip(*np.where(gridMatrix == 'S'))[0]
+
+
+		self.objects['start'] = start
+		for i, o in enumerate(objects):
+			self.objects[objectNames[i]] = o
 
 
 	def getBookGrid(self):
