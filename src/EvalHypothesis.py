@@ -71,7 +71,7 @@ class EvalHypothesis():
 	def object(self, S, A):
 		"""
 
-		"""
+		""" 
 
 		# Calculate cost from S->A
 		S_index = self.grid.objects.keys().index(S)
@@ -80,9 +80,14 @@ class EvalHypothesis():
 
 		# Build subPolicy matrix from S->A
 		subPolicy = np.zeros([len(evalH.grid.objects), len(evalH.grid.objects)-1])
-		subPolicy[S_index][A_index-1] = 1
 
-		return np.array([cost, subPolicy], dtype=object)
+		if A_index-1 < 0:
+			pass
+
+		else:
+			subPolicy[S_index][A_index-1] = 1
+
+		return np.array([cost, subPolicy, A], dtype=object)
 
 
 
@@ -90,14 +95,26 @@ class EvalHypothesis():
 		"""
 
 		"""
-		S_index = self.grid.objects.keys().index(S)
-		A_index = self.grid.objects.keys().index(A)
-		B_index = self.grid.objects.keys().index(B)
+		if type(S) is str:
+			S = self.object(S,S)
+		if type(A) is str:
+			A = self.object(S[2][-1],A)
+		if type(B) is str:
+			B = self.object(S[2][-1],B)
 
+		return A if A[0] < B[0] else B
 
-		return A if self.dist[S_index][A_index] < self.dist[S_index][B_index] else B
+	def Then(self, S, A, B):
+		"""
 
+		"""
+		if type(S) is str:
+			S = self.object(S,S)
+		if type(A) is str:
+			A = self.object(S[2][-1],A)
+		if type(B) is str:
+			B = self.object(A[2][-1],B)
 
-
+		return A + B
 
  

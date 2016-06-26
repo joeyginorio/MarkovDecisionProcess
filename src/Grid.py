@@ -57,7 +57,7 @@ class Grid():
 		start = zip(*np.where(gridMatrix == 'S'))[0]
 
 
-		self.objects['start'] = start
+		self.objects['S'] = start
 		for i, o in enumerate(objects):
 			self.objects[objectNames[i]] = o
 
