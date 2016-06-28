@@ -68,53 +68,72 @@ class EvalHypothesis():
 
 		return dist 
 
-	def object(self, S, A):
-		"""
-
-		""" 
-
-		# Calculate cost from S->A
-		S_index = self.grid.objects.keys().index(S)
-		A_index = self.grid.objects.keys().index(A)
-		cost = self.dist[S_index][A_index]
-
-		# Build subPolicy matrix from S->A
-		subPolicy = np.zeros([len(evalH.grid.objects), len(evalH.grid.objects)-1])
-
-		if A_index-1 < 0:
-			pass
-
-		else:
-			subPolicy[S_index][A_index-1] = 1
-
-		return np.array([cost, subPolicy, A], dtype=object)
-
-
-
-	def Or(self, S, A, B):
+	def Or(self, A, B):
 		"""
 
 		"""
-		if type(S) is str:
-			S = self.object(S,S)
-		if type(A) is str:
-			A = self.object(S[2][-1],A)
-		if type(B) is str:
-			B = self.object(S[2][-1],B)
+		return np.append(A,B)
+		 
 
-		return A if A[0] < B[0] else B
-
-	def Then(self, S, A, B):
+	def Then(self, A, B):
 		"""
 
 		"""
-		if type(S) is str:
-			S = self.object(S,S)
-		if type(A) is str:
-			A = self.object(S[2][-1],A)
-		if type(B) is str:
-			B = self.object(A[2][-1],B)
+		C = np.array([])
 
-		return A + B
+		for i in range(len(A)):
+			for j in range(len(B)):
+				C = np.append(C, A[i] + B[j])
 
- 
+
+		return C
+
+	def And(self, A, B):
+		"""
+
+		"""
+		return self.Or(self.Then(A,B), self.Then(B,A))
+
+	def linkGraphStrings(self, graphList):
+		"""
+
+		"""
+		return ['S' + graphString for graphString in graphList]
+
+	def minCostGraphString(self, graphList):
+		"""
+
+		"""
+		costGraphList = np.zeros(len(graphList))
+
+		for i, graphString in enumerate(graphList):
+			costGraphList[i] = self.costGraphString(graphString)
+
+		return graphList[np.argmin(costGraphList)]
+
+
+	def costGraphString(self, graphString):
+		"""
+
+		"""
+		cost = 0
+
+		for i in range(len(graphString)):
+			
+			if len(graphString[i:i+2]) == 1:
+				break
+
+			cost += self.costEdge(graphString[i:i+2])
+
+		return cost
+
+
+	def costEdge(self, edgeString):
+		"""
+
+		"""
+		objIndex1 = self.grid.objects.keys().index(edgeString[0])
+		objIndex2 = self.grid.objects.keys().index(edgeString[1])
+
+		return self.dist[objIndex1][objIndex2]
+
