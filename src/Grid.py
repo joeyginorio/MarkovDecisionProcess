@@ -14,17 +14,18 @@ class Grid():
 	"""
 
 	def __init__(self, grid='bookGrid'):
+
 		self.row = 0
 		self.col = 0
-
 
 		self.objects = OrderedDict()
 		self.walls = list()
 		
-
+		# Sutton, Barto canonical example
 		if grid == 'bookGrid':
 			self.getBookGrid()
 
+		# GridWorld implementation for testing, modify testGrid.txt
 		elif grid == 'testGrid':
 			self.getTestGrid()
 
@@ -33,31 +34,39 @@ class Grid():
 		""" 
 			Initializes grid to the desired gridWorld configuration.
 		"""
+		
+		# Load in the .txt gridworld
 		gridBuffer = np.loadtxt(fileName, dtype=str)
 
+		# Find out how many objects to look for
 		numObjects = int(gridBuffer[0])
+
 		objectNames = list()
 		objects = list()
 
+		# Store the names for each object
 		for i in range(numObjects):
 			objectNames.append(gridBuffer[i+1])
 
+		# Set gridbuffer to only contain the map
 		gridBuffer = gridBuffer[(numObjects+1):]
 
+		# Find row/col of map
 		self.row = len(gridBuffer)
 		self.col = len(gridBuffer[0])
 
+		# Store the gridworld in a matrix
 		gridMatrix = np.empty([self.row,self.col], dtype=str)
-
 		for i in range(self.row):
 			gridMatrix[i] = list(gridBuffer[i])
 
+		# Store all object locations
 		objects = zip(*np.where(gridMatrix == 'O'))
+
+		# Store all wall locations
 		self.walls = zip(*np.where(gridMatrix == 'W'))
-		start = zip(*np.where(gridMatrix == 'S'))[0]
 
-
-		self.objects['S'] = start
+		# Store object:location in dictionary
 		for i, o in enumerate(objects):
 			self.objects[objectNames[i]] = o
 
